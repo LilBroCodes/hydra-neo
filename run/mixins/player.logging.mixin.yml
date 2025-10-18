@@ -1,18 +1,14 @@
-meta:
-  name: "player-logging"
-  author: "you"
-  priority: 100
+target: "#components/progress-bar/ProgressBar.tsx"
+code_file: "./methods/playerCode.ts"
+priority: 0
 
-target:
-  - "src/player.ts"
-  - "src/entities/*.ts"
+injections:
+  - where: "HEAD"
+    priority: 10
+    source_method: "useProgressBarContext"
+    code_method: "mix1"
 
-method:
-  name: "takeDamage"
-
-where: "HEAD"
-
-code_file: "./methods/logTakeDamage.ts"
-
-conditions:
-  environment: ["development"]
+  - where: "HEAD"
+    priority: 1
+    source_method: "useProgressBarContext"
+    code_method: "mix2"

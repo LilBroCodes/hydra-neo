@@ -1,10 +1,10 @@
-webpack:
-  bundle: "./src/mmain.a36d99ae.chunk.js"
-  sourcemap: "./src/mmain.a36d99ae.chunk.js.map"
+fail_on_error: true
+output_folder: "./out"
 
+webpack:
+  bundle: "./src/main.a36d99ae.chunk.js"
+  sourcemap: "./src/main.a36d99ae.chunk.js.map"
 mixins:
   - "./mixins/**/*.mixin.yml"
-
-defaults:
-  injection: "HEAD"
-  sourceLang: "ts"
+libs:
+  - "./mixins/globals.ts"

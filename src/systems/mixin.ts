@@ -2,39 +2,36 @@ import fs from "fs";
 import path from "path";
 import yaml from "js-yaml";
 import { z } from "zod";
-import { expandGlobList } from "../utils/utils"
 
-export const MethodSelectorZ = z
-  .object({
-    name: z.string().optional(),
-    pattern: z.string().optional(),
-  })
-  .refine((v) => !!(v.name || v.pattern), { message: "method must have name or pattern" })
-  .optional()
-  .default({});
-
-export const MixinZ = z.object({
-  meta: z.record(z.string(), z.any()).optional(),
-  target: z.union([z.string(), z.array(z.string())]),
-  method: MethodSelectorZ,
-  where: z.enum(["HEAD", "TAIL"]).optional(),
-  code: z.string().optional(),
-  code_file: z.string().optional(),
+const InjectionZ = z.object({
+  where: z.enum(["HEAD", "TAIL"]),
   priority: z.number().optional(),
-  conditions: z.record(z.string(), z.any()).optional(),
+  source_method: z.string(),
+  code_method: z.string(),
 });
 
-export type RawMixin = z.infer<typeof MixinZ>;
+const MixinMetaZ = z.object({
+  target: z.string(),
+  code_file: z.string(),
+  priority: z.number().optional(),
+  injections: z.array(InjectionZ),
+});
+
+export type RawMixin = z.infer<typeof MixinMetaZ>;
+
+export type NormalizedInjection = {
+  where: "HEAD" | "TAIL";
+  priority: number;
+  source_method?: string;
+  code_method?: string;
+};
 
 export type NormalizedMixin = {
   id: string;
-  meta?: Record<string, any>;
-  targets: string[]; // absolute paths
-  method: { name?: string; pattern?: string } | { any?: true };
-  where: "HEAD" | "TAIL";
-  code?: string; // raw code content
-  priority?: number;
-  conditions?: Record<string, any>;
+  target: string;
+  code?: string;
+  priority: number;
+  injections: NormalizedInjection[];
   sourceMixinPath: string;
 };
 
@@ -43,67 +40,63 @@ export function readMixinFile(mixinPath: string): RawMixin {
   if (ext !== ".yml") throw new Error("Mixin files must be .yml");
   const raw = fs.readFileSync(mixinPath, "utf8");
   const parsed = yaml.load(raw);
-  return MixinZ.parse(parsed ?? {});
+  return MixinMetaZ.parse(parsed ?? {});
 }
 
-export function normalizeMixin(raw: RawMixin, mixinPath: string, defaults: { injection?: "HEAD" | "TAIL" | undefined }, projectRoot: string): NormalizedMixin {
-  const meta = raw.meta ?? {};
-  const targetRaw = raw.target;
-  const targets = Array.isArray(targetRaw) ? targetRaw.map(String) : [String(targetRaw)];
+export function normalizeMixin(
+  raw: RawMixin,
+  mixinPath: string,
+  projectRoot: string,
+): NormalizedMixin {
+  const target = typeof raw.target === "string" ? raw.target : "";
 
-  let method: any;
-  if (!raw.method || Object.keys(raw.method).length === 0) method = { any: true };
-  else if ((raw.method as any).name) method = { name: String((raw.method as any).name) };
-  else if ((raw.method as any).pattern) method = { pattern: String((raw.method as any).pattern) };
-  else method = { any: true };
-
-  const where = (raw.where ?? defaults?.injection ?? "HEAD").toUpperCase() === "TAIL" ? "TAIL" : "HEAD";
-  const priority = typeof raw.priority === "number" ? raw.priority : meta?.priority ?? 0;
-
-  let code: string | undefined;
-  if (raw.code) {
-    code = String(raw.code);
-  } else if (raw.code_file) {
-    const mixinDir = path.dirname(mixinPath);
-    const candidateA = path.resolve(mixinDir, String(raw.code_file));
-    const candidateB = path.resolve(projectRoot, String(raw.code_file));
-    let chosen: string | null = null;
-    if (fs.existsSync(candidateA) && fs.statSync(candidateA).isFile()) chosen = candidateA;
-    else if (fs.existsSync(candidateB) && fs.statSync(candidateB).isFile()) chosen = candidateB;
-    else throw new Error(`code_file not found (tried ${candidateA} and ${candidateB})`);
-    code = fs.readFileSync(chosen, "utf8");
+  if (target.trim() === "") {
+    throw new Error("Mixin target is required");
   }
+  const mixinDir = path.dirname(mixinPath);
+  const candidateA = path.resolve(mixinDir, raw.code_file);
+  const candidateB = path.resolve(projectRoot, raw.code_file);
+  let codePath: string | null = null;
+  if (fs.existsSync(candidateA) && fs.statSync(candidateA).isFile())
+    codePath = candidateA;
+  else if (fs.existsSync(candidateB) && fs.statSync(candidateB).isFile())
+    codePath = candidateB;
+  else
+    throw new Error(
+      `code_file not found (tried ${candidateA} and ${candidateB})`,
+    );
+  const code = fs.readFileSync(codePath, "utf8");
 
-  const resolvedTargets = expandGlobList(targets, projectRoot);
+  const injections: NormalizedInjection[] = (raw.injections ?? []).map(
+    (inj) => ({
+      where: inj.where?.toUpperCase() === "TAIL" ? "TAIL" : "HEAD",
+      priority: typeof inj.priority === "number" ? inj.priority : 0,
+      source_method: inj.source_method,
+      code_method: inj.code_method,
+    }),
+  );
+
+  injections.forEach((inj, _) => {
+    if (inj.code_method == undefined || !code.includes(inj.code_method)) {
+      throw new Error(
+        `code_method invalid or not found in code: ${inj.code_method}`,
+      );
+    }
+  });
 
   return {
-    id: meta.name ?? path.basename(mixinPath),
-    meta,
-    targets: resolvedTargets,
-    method,
-    where,
+    id: path.basename(mixinPath),
+    target,
     code,
-    priority,
-    conditions: raw.conditions ?? {},
+    priority: typeof raw.priority === "number" ? raw.priority : 0,
+    injections,
     sourceMixinPath: mixinPath,
   };
 }
 
 export function applyMixin(m: NormalizedMixin) {
-  console.log("=== MIXIN:", m.id);
-  console.log("source mixin:", m.sourceMixinPath);
-  console.log("priority:", m.priority);
-  console.log("where:", m.where);
-  console.log("method:", m.method);
-  console.log("targets:");
-  for (const t of m.targets) console.log("  -", t);
-  if (m.code) {
-    console.log("--- code preview ---");
-    console.log(m.code.slice(0, 400));
-    if (m.code.length > 400) console.log("... (truncated)");
-    console.log("--- end preview ---");
-  } else {
-    console.log("(no code provided)");
-  }
-  console.log();
+  console.log(
+    `Found mixin for target: ${m.target} (from ${m.sourceMixinPath})`,
+  );
+  console.log(JSON.stringify(m, null, 2));
 }

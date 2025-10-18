@@ -4,24 +4,36 @@
   "author": "LilBroCodes <lilbrocodes@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "compile": "tsc",
+    "build": "tsc && pkg . --targets node18-linux-x64,node18-macos-x64,node18-win-x64 --output build/hydra",
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
-    "dev": "tsc; node dist/index.js",
+    "dev": "ts-node --transpile-only src/index.ts",
     "dev:watch": "ts-node-dev --respawn --transpile-only src/index.ts"
   },
   "devDependencies": {
-    "@types/glob": "^9.0.0",
+    "@types/babel__traverse": "^7.28.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.8.1",
+    "pkg": "^5.8.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "@babel/generator": "^7.28.3",
+    "@babel/parser": "^7.28.4",
+    "@babel/traverse": "^7.28.4",
+    "@types/babel__generator": "^7.27.0",
+    "cli-spinners": "^3.3.0",
+    "commander": "^14.0.1",
     "glob": "^11.0.3",
     "js-yaml": "^4.1.0",
+    "ora": "^9.0.0",
+    "source-map": "^0.7.6",
     "toml": "^3.0.0",
-    "tslog": "^4.10.2",
     "zod": "^4.1.12"
+  },
+  "bin": {
+    "hydra": "dist/index.js"
   }
 }

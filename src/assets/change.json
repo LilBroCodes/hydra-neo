@@ -1,0 +1,11 @@
+{
+    "changes": [
+        {
+            "version": "1.0.0",
+            "date": "2025-10-18",
+            "changes": [
+                "Initial pre-release build of hydra"
+            ]
+        }
+    ]
+}
