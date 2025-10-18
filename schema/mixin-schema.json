@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Target Injection Config",
+  "type": "object",
+  "properties": {
+    "target": { "type": "string" },
+    "code_file": { "type": "string" },
+    "priority": { "type": "integer", "minimum": 0 },
+    "injections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "where": { "type": "string", "enum": ["HEAD", "TAIL"] },
+          "priority": { "type": "integer", "minimum": 0 },
+          "source_method": { "type": "string" },
+          "code_method": { "type": "string" }
+        },
+        "required": ["where", "source_method", "code_method"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["target", "code_file"],
+  "additionalProperties": false
+}

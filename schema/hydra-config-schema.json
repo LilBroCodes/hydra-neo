@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Global Build Config",
+  "type": "object",
+  "properties": {
+    "fail_on_error": { "type": "boolean" },
+    "output_folder": { "type": "string" },
+    "webpack": {
+      "type": "object",
+      "properties": {
+        "bundle": { "type": "string" },
+        "sourcemap": { "type": "string" }
+      },
+      "required": ["bundle"]
+    },
+    "mixins": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "libs": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["fail_on_error", "output_folder", "webpack"],
+  "additionalProperties": false
+}
