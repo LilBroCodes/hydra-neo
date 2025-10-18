@@ -1,0 +1,18 @@
+meta:
+  name: "player-logging"
+  author: "you"
+  priority: 100
+
+target:
+  - "src/player.ts"
+  - "src/entities/*.ts"
+
+method:
+  name: "takeDamage"
+
+where: "HEAD"
+
+code_file: "./methods/logTakeDamage.ts"
+
+conditions:
+  environment: ["development"]

@@ -1,0 +1,10 @@
+webpack:
+  bundle: "./src/mmain.a36d99ae.chunk.js"
+  sourcemap: "./src/mmain.a36d99ae.chunk.js.map"
+
+mixins:
+  - "./mixins/**/*.mixin.yml"
+
+defaults:
+  injection: "HEAD"
+  sourceLang: "ts"
