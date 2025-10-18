@@ -1,0 +1,13 @@
+.vscode/
+dist/
+run/
+.gitignore
+.prettierc.json
+.prettierignore
+yarn.lock
+*.ts
+src/*
+src/**/*
+tsconfig.json
+*.tgz
+*.map

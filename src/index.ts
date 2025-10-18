@@ -8,7 +8,7 @@ import { readConfigFile } from "./systems/config";
 import { askYesNo, expandGlobList, loadChange, loadNote, loadPackageJSON } from "./utils/utils";
 import { normalizeMixin, readMixinFile } from "./systems/mixin";
 
-setup();
+// setup();
 
 function resolveConfigPath(config_path?: string): string {
   if (config_path?.trim()) {

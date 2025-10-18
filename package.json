@@ -1,4 +1,5 @@
 {
+  "name": "hydra-loader",
   "version": "1.0.0",
   "main": "dist/index.js",
   "author": "LilBroCodes <lilbrocodes@gmail.com>",
