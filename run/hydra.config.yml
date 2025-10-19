@@ -5,6 +5,6 @@ webpack:
   bundle: "./src/main.a36d99ae.chunk.js"
   sourcemap: "./src/main.a36d99ae.chunk.js.map"
 mixins:
-  - "./mixins/**/*.mixin.yml"
+  - "./mixins/**/mixin.yml"
 libs:
   - "./mixins/globals.ts"

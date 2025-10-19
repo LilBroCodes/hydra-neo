@@ -39,15 +39,20 @@ export function loadJSON<T>(relativePath: string): T {
   return JSON.parse(jsonStr) as T;
 }
 
-
 export function loadPackageJSON(): { version: string } {
   return loadJSON("../../package.json");
 }
 
 export function loadChange() {
-  return loadJSON<{ changes: { version: string, date: string, changes: string[] }[] }>("../assets/change.json");
+  return loadJSON<{
+    changes: { version: string; date: string; changes: string[] }[];
+  }>("../assets/change.json");
 }
 
 export function loadNote() {
   return loadJSON<{ notes: string[] }>("../assets/notes.json");
+}
+
+export function loadExtensionBase() {
+  return loadJSON<{ config: string, script: string }>("../assets/extension_base.json");
 }

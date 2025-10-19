@@ -2,11 +2,11 @@ import * as t from "@babel/types";
 import * as parser from "@babel/parser";
 import traverse, { NodePath } from "@babel/traverse";
 
-
 import { SourceMapConsumer, BasicSourceMapConsumer } from "source-map";
 import * as fs from "fs";
 import { NormalizedMixin } from "../systems/mixin";
 import generate from "@babel/generator";
+import path from "path";
 
 let sourceMapCache: { [path: string]: BasicSourceMapConsumer } = {};
 
@@ -21,28 +21,32 @@ export async function loadSourceMap(
   sourceMapCache[path] = smc;
   return smc;
 }
-
 export async function getSourceByFilename(
   path: string | undefined,
   filename: string,
-): Promise<string> {
-  if (!path) {
-    throw new Error(`Source map path is undefined`);
-  }
+): Promise<{ sourceName: string; sourceCode: string }> {
+  if (!path) throw new Error(`Source map path is undefined`);
   const smc = await loadSourceMap(path);
-  const index = smc.sources.findIndex((src) => src.endsWith(filename));
-  if (index === -1) {
-    throw new Error(`Source file ${filename} not found in source map ${path}`);
-  }
 
-  const sourceCode = smc.sourcesContent?.[index];
-  if (!sourceCode) {
+  const matched = smc.sources.find((src) => src.endsWith(filename));
+  if (!matched) {
+    const candidates = smc.sources.filter((src) =>
+      src.includes(filename.split("/").pop() ?? ""),
+    );
     throw new Error(
-      `No source content found for ${filename} in source map ${path}`,
+      `Source file ${filename} not found in source map ${path}. Candidates: ${JSON.stringify(candidates.slice(0, 10))}`,
     );
   }
 
-  return sourceCode;
+  const index = smc.sources.indexOf(matched);
+  const sourceCode = smc.sourcesContent?.[index];
+  if (!sourceCode) {
+    throw new Error(
+      `No source content found for ${filename} (source: ${matched}) in source map ${path}`,
+    );
+  }
+
+  return { sourceName: matched, sourceCode };
 }
 
 export function parseSourceToAST(code: string): parser.ParseResult {
@@ -285,7 +289,9 @@ export function getMethodCodeInsideFunction(
             t.isBlockStatement(decl.init.body)
           ) {
             code = decl.init.body.body
-              .map((stmt: t.Statement) => generate(stmt, { compact: true }).code)
+              .map(
+                (stmt: t.Statement) => generate(stmt, { compact: true }).code,
+              )
               .join("");
             path.stop();
           }
@@ -350,6 +356,45 @@ export function injectAtHead(
   lines[adjustedLine - 1] = before + code + after;
   return lines.join("\n");
 }
+
+export async function generateSourceCode(sourceMapFile: string, outputPath?: string, nocheck?: boolean): Promise<void> {
+  const outDir = path.resolve(process.cwd(), outputPath ?? "generated-source");
+
+  const smc = await loadSourceMap(sourceMapFile);
+
+  const rawMap = smc as any;
+  const sources = rawMap.sources as string[];
+  const sourcesContent = rawMap.sourcesContent as (string | null)[];
+
+  if (!sources || !sources.length) {
+    throw new Error(`No sources found in source map: ${sourceMapFile}`);
+  }
+  if (!sourcesContent || sourcesContent.length === 0) {
+    throw new Error(
+      `Source map ${sourceMapFile} does not contain embedded sourcesContent.`,
+    );
+  }
+
+  await fs.promises.mkdir(outDir, { recursive: true });
+
+  for (let i = 0; i < sources.length; i++) {
+    const srcName = sources[i];
+    const content = sourcesContent[i];
+    if (content == null) continue;
+    const cleanPath = srcName
+      .replace(/^webpack:\/\/\//, "")
+      .replace(/^file:\/\//, "")
+      .replace(/\?.*$/, "");
+
+    const fileOut = path.join(outDir, cleanPath);
+    await fs.promises.mkdir(path.dirname(fileOut), { recursive: true });
+    const header = nocheck ? "// @ts-nocheck\n/* @generated-source */\n\n" : "/* @generated-source */\n\n";
+    await fs.promises.writeFile(fileOut, header + content, "utf8");
+  }
+
+  console.log(`Source code exported to: ${outDir}`);
+}
+
 
 // export async function injectAtTail(
 //   bundle: string,

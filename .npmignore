@@ -1,13 +1,33 @@
+# IDE and tooling
 .vscode/
+
+# Build output and runtime
 dist/
 run/
-.gitignore
-.prettierc.json
-.prettierignore
+
+# Dependencies and package management
 yarn.lock
-*.ts
-src/*
-src/**/*
-tsconfig.json
+
+# Build artifacts
 *.tgz
 *.map
+
+# Source files
+src/
+src/**/*
+
+# Json chemas
+schema/
+
+# TypeScript config
+tsconfig.json
+
+# Prettier config
+.prettierc.json
+.prettierignore
+
+# Git
+.gitignore
+
+# Fallback ignore for TS
+*.ts

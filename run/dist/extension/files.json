@@ -1,0 +1,11 @@
+{
+  "urls": [
+    "*://my.logiscool.com/*"
+  ],
+  "files": [
+    {
+      "name": "inject.js",
+      "regex": "main\\..{8}\\.chunk\\.js"
+    }
+  ]
+}

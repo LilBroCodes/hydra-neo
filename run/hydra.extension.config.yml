@@ -1,0 +1,12 @@
+name: "Example Extension"
+version: "1.0.0"
+
+urls:
+  - "*://my.logiscool.com/*"
+
+files:
+  - name: "inject.js"
+    regex: 'main\..{8}\.chunk\.js'
+    source: "./out/main.a36d99ae.chunk.js"
+
+output_folder: "./dist/extension"

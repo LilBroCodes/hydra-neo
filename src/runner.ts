@@ -15,7 +15,7 @@ import {
   getSourceByFilename,
   injectAtHead,
   parseSourceToAST,
-} from "./parsing/mapHandler";
+} from "./handling/mapHandler";
 import { ParseResult } from "@babel/parser";
 import path from "path";
 
@@ -86,13 +86,14 @@ export async function run(configPath: string, verbose = false): Promise<void> {
   }
   logOrSpinner.succeed(
     mixinSpinner,
-    `Loaded ${normalized.length} mixin(s). ` + (loadErrors > 0 ? ` Errors: ${loadErrors}` : ""),
+    `Loaded ${normalized.length} mixin(s). ` +
+      (loadErrors > 0 ? ` Errors: ${loadErrors}` : ""),
   );
 
   const sourceSpinner = logOrSpinner.start(
     `Finding sources for ${normalized.length} mixin(s)...`,
   );
-  const sources: string[] = [];
+  const sources: { sourceName: string; sourceCode: string }[] = [];
   let sourceErrors = 0;
 
   for (const mixin of normalized) {
@@ -114,7 +115,8 @@ export async function run(configPath: string, verbose = false): Promise<void> {
   }
   logOrSpinner.succeed(
     sourceSpinner,
-    `Found ${sources.length} source(s). ` + (sourceErrors > 0 ? ` Errors: ${sourceErrors}` : ""),
+    `Found ${sources.length} source(s). ` +
+      (sourceErrors > 0 ? ` Errors: ${sourceErrors}` : ""),
   );
 
   const parseSpinner = logOrSpinner.start(
@@ -125,7 +127,7 @@ export async function run(configPath: string, verbose = false): Promise<void> {
 
   for (const source of sources) {
     try {
-      const parsed = parseSourceToAST(source);
+      const parsed = parseSourceToAST(source.sourceCode);
       parsedSources.push(parsed);
     } catch (err) {
       parseErrors++;
@@ -138,7 +140,8 @@ export async function run(configPath: string, verbose = false): Promise<void> {
   }
   logOrSpinner.succeed(
     parseSpinner,
-    `Parsed ${parsedSources.length} source(s). ` + (parseErrors > 0 ? ` Errors: ${parseErrors}` : ""),
+    `Parsed ${parsedSources.length} source(s). ` +
+      (parseErrors > 0 ? ` Errors: ${parseErrors}` : ""),
   );
 
   const injectSpinner = logOrSpinner.start(
@@ -152,6 +155,7 @@ export async function run(configPath: string, verbose = false): Promise<void> {
   for (let i = 0; i < normalized.length; i++) {
     const mixin = normalized[i];
     const ast = parsedSources[i];
+    const source = sources[i];
     const mixinAst = parseSourceToAST(mixin.code!);
 
     mixin.injections.sort((a, b) => a.priority - b.priority);
@@ -175,7 +179,7 @@ export async function run(configPath: string, verbose = false): Promise<void> {
       try {
         genPos = await getGeneratedPosition(
           cfg.webpack.sourcemap,
-          mixin.target.replace("#", ""),
+          source.sourceName,
           loc.line,
           loc.column,
         );
@@ -240,7 +244,7 @@ export async function run(configPath: string, verbose = false): Promise<void> {
         //     console.log(
         //       `Injected method ${injection.source_method} at TAIL of ${mixin.target}`,
         //     );
-        // } 
+        // }
         // catch (err) {
         //   injectErrors++;
         //   logOrSpinner.fail(
@@ -249,13 +253,13 @@ export async function run(configPath: string, verbose = false): Promise<void> {
         //   );
         //   if (cfg.fail_on_error) throw err;
         // }
-        
       }
     }
   }
   logOrSpinner.succeed(
     injectSpinner,
-    `Injected ${injections.length} methods. ` + (injectErrors > 0 ? ` Errors: ${injectErrors}` : ""),
+    `Injected ${injections.length} methods. ` +
+      (injectErrors > 0 ? ` Errors: ${injectErrors}` : ""),
   );
 
   const writeSpinner = logOrSpinner.start(`Writing modified bundle to disk...`);

@@ -1,0 +1,7 @@
+target: "#api/Api.ts"
+code_file: "./mixins/main/mixin.js"
+
+injections:
+  - where: HEAD
+    source_method: init
+    code_method: hello

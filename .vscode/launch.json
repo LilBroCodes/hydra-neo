@@ -6,28 +6,10 @@
       "request": "launch",
       "name": "Run :dev",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["ts-node", "--transpile-only", "src/index.ts"],
+      "runtimeArgs": ["ts-node", "--transpile-only", "src/index.ts", "build"],
       "cwd": "${workspaceFolder}",
       "skipFiles": ["<node_internals>/**"],
       "console": "integratedTerminal",
-      "env": {
-        "NODE_ENV": "development"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Run :dev:watch",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": [
-        "ts-node-dev",
-        "--respawn",
-        "--transpile-only",
-        "src/index.ts"
-      ],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"],
       "env": {
         "NODE_ENV": "development"
       }
