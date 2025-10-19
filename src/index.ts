@@ -13,10 +13,7 @@ import {
 } from "./utils/utils";
 import { normalizeMixin, readMixinFile } from "./systems/mixin";
 import { generateExtension } from "./handling/extensionGenerator";
-import { setup } from "./dev/devStatic";
 import { generateSourceCode } from "./handling/mapHandler";
-
-setup();
 
 function resolveConfigPath(
   defaultFiles: string[],

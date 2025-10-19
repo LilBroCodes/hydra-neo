@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Hydra Loader",
-  "version": "1.0",
+  "name": "Example Extension",
+  "version": "1.0.0",
   "permissions": [
     "webRequest",
     "webRequestBlocking",
@@ -29,7 +29,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "%EXPOSED_FILES%"
+        "inject.js"
       ],
       "matches": ["<all_urls>"]
     }

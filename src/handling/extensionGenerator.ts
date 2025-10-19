@@ -18,8 +18,14 @@ export async function generateExtension(
 
   if (verbose) console.log("Generating manifest...");
   const manifest = base.config.replace(
-    '"%EXPOSED_FILES"',
-    config.files.map((f) => `"${f.name}`).join(", "),
+    '"%EXPOSED_FILES%"',
+    config.files.map((f) => `"${f.name}"`).join(", "),
+  ).replace(
+    '%EXTENSION_NAME%',
+    config.name ?? "Hydra Generated Extension"
+  ).replace(
+    '%EXTENSION_VERSION%',
+    config.version ?? "1.0.0"
   );
   fs.writeFileSync(path.join(out, "manifest.json"), manifest);
 
