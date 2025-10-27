@@ -1,6 +1,6 @@
 {
   "name": "hydra-loader",
-  "version": "1.1.3",
+  "version": "1.3.0",
   "main": "dist/index.js",
   "author": "LilBroCodes <lilbrocodes@gmail.com>",
   "license": "MIT",
@@ -35,6 +35,7 @@
     "hydra": "dist/index.js"
   },
   "files": [
-    "dist/**/*.js", "dist/**/*.json"
+    "dist/**/*.js",
+    "dist/**/*.json"
   ]
 }

@@ -5,3 +5,6 @@ injections:
   - where: HEAD
     source_method: init
     code_method: hello
+    offset:
+      row: 0
+      col: 0

@@ -3,11 +3,17 @@ import path from "path";
 import yaml from "js-yaml";
 import { z } from "zod";
 
+const OffsetZ = z.object({
+  row: z.number().default(0),
+  col: z.number().default(0)
+})
+
 const InjectionZ = z.object({
   where: z.enum(["HEAD", "TAIL"]),
   priority: z.number().optional(),
   source_method: z.string(),
   code_method: z.string(),
+  offset: OffsetZ.optional()
 });
 
 const MixinMetaZ = z.object({
@@ -24,6 +30,7 @@ export type NormalizedInjection = {
   priority: number;
   source_method?: string;
   code_method?: string;
+  offset?: { row: number, col: number };
 };
 
 export type NormalizedMixin = {
@@ -73,6 +80,7 @@ export function normalizeMixin(
       priority: typeof inj.priority === "number" ? inj.priority : 0,
       source_method: inj.source_method,
       code_method: inj.code_method,
+      offset: inj.offset,
     }),
   );
 

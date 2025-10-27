@@ -14,7 +14,14 @@
           "where": { "type": "string", "enum": ["HEAD", "TAIL"] },
           "priority": { "type": "integer", "minimum": 0 },
           "source_method": { "type": "string" },
-          "code_method": { "type": "string" }
+          "code_method": { "type": "string" },
+          "offset": {
+            "type": "object",
+            "properties": {
+              "row": { "type": "integer" },
+              "col": { "type": "integer" }
+            }
+          }
         },
         "required": ["where", "source_method", "code_method"],
         "additionalProperties": false

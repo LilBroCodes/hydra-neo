@@ -18,6 +18,7 @@ import {
 } from "./handling/mapHandler";
 import { ParseResult } from "@babel/parser";
 import path from "path";
+import generate from "@babel/generator"; // <-- added for compressing libs
 
 export async function run(configPath: string, verbose = false): Promise<void> {
   const projectRoot = process.cwd();
@@ -212,7 +213,9 @@ export async function run(configPath: string, verbose = false): Promise<void> {
       }
 
       if (injection.where === "HEAD") {
-        bundle = injectAtHead(bundle, genPos, injections, methodCode);
+        let offset = injection.offset ?? { row: 0, col: 0 }
+        let pos = { line: genPos.line + offset.row, column: genPos.column + offset.col }
+        bundle = injectAtHead(bundle, pos, injections, methodCode);
         injections.push({ pos: genPos, code: methodCode });
         if (verbose)
           console.log(
@@ -220,39 +223,6 @@ export async function run(configPath: string, verbose = false): Promise<void> {
           );
       } else if (injection.where === "TAIL") {
         throw new Error("TAIL injection not yet implemented");
-
-        // try {
-        //   bundle = await injectAtTail(
-        //     bundle,
-        //     cfg.webpack.sourcemap,
-        //     mixin.target.replace("#", ""),
-        //     ast,
-        //     injection.source_method,
-        //     injections,
-        //     methodCode,
-        //   );
-        //   injections.push({
-        //     pos: await getGeneratedPosition(
-        //       cfg.webpack.sourcemap,
-        //       mixin.target.replace("#", ""),
-        //       getMethodBodyStart(ast, injection.source_method)!.line,
-        //       getMethodBodyStart(ast, injection.source_method)!.column,
-        //     ),
-        //     code: methodCode,
-        //   });
-        //   if (verbose)
-        //     console.log(
-        //       `Injected method ${injection.source_method} at TAIL of ${mixin.target}`,
-        //     );
-        // }
-        // catch (err) {
-        //   injectErrors++;
-        //   logOrSpinner.fail(
-        //     injectSpinner,
-        //     `Failed to inject at TAIL for ${injection.source_method}: ${(err as Error).message}`,
-        //   );
-        //   if (cfg.fail_on_error) throw err;
-        // }
       }
     }
   }
@@ -261,6 +231,77 @@ export async function run(configPath: string, verbose = false): Promise<void> {
     `Injected ${injections.length} methods. ` +
       (injectErrors > 0 ? ` Errors: ${injectErrors}` : ""),
   );
+
+  const libLoadSpinner = logOrSpinner.start(
+    `Loading ${cfg.libs?.length ?? 0} lib${(cfg.libs?.length ?? 0) == 1 ? "": "s"} from disk...`,
+  );
+  const loadedLibs: { libPath: string; content: string }[] = [];
+  let libLoadErrors = 0;
+
+  if (!cfg.libs || cfg.libs.length === 0) {
+    logOrSpinner.succeed(libLoadSpinner, `No libs configured to load.`);
+  } else {
+    for (const libPathRaw of cfg.libs) {
+      const libPath = path.isAbsolute(libPathRaw)
+        ? libPathRaw
+        : path.join(projectRoot, libPathRaw);
+      try {
+        const content = fs.readFileSync(libPath, "utf-8");
+        loadedLibs.push({ libPath, content });
+        if (verbose) console.log(`Loaded lib: ${libPath} (${content.length} bytes)`);
+      } catch (err) {
+        libLoadErrors++;
+        const errMsg = `Failed to load lib ${libPath}: ${(err as Error).message}`;
+        logOrSpinner.fail(libLoadSpinner, errMsg);
+        if (cfg.fail_on_error) throw err;
+      }
+    }
+    logOrSpinner.succeed(
+      libLoadSpinner,
+      `Loaded ${loadedLibs.length} lib(s). ` +
+        (libLoadErrors > 0 ? ` Errors: ${libLoadErrors}` : ""),
+    );
+  }
+
+  // --- New: parse & compress each loaded lib ---
+  const compressSpinner = logOrSpinner.start(
+    `Parsing & compressing ${loadedLibs.length} lib(s)...`,
+  );
+  const compressedLibs: { libPath: string; compressed: string }[] = [];
+  let compressErrors = 0;
+
+  for (const lib of loadedLibs) {
+    try {
+      const ast = parseSourceToAST(lib.content);
+
+      const result = generate(ast as any, {
+        compact: true,
+        minified: true,
+        comments: false,
+      });
+
+      const compressed = result.code ?? "";
+      compressedLibs.push({ libPath: lib.libPath, compressed });
+      if (verbose) console.log(`Compressed lib: ${lib.libPath} -> ${compressed.length} bytes`);
+    } catch (err) {
+      compressErrors++;
+      const errMsg = `Failed to parse/compress lib ${lib.libPath}: ${(err as Error).message}`;
+      logOrSpinner.fail(compressSpinner, errMsg);
+      if (cfg.fail_on_error) throw err;
+    }
+  }
+
+  logOrSpinner.succeed(
+    compressSpinner,
+    `Compressed ${compressedLibs.length} lib(s). ` +
+      (compressErrors > 0 ? ` Errors: ${compressErrors}` : ""),
+  );
+
+  if (compressedLibs.length > 0) {
+    const combinedLibs = compressedLibs.map((l) => l.compressed).join("\n");
+    bundle = combinedLibs + "\n" + bundle;
+    if (verbose) console.log(`Prepended ${compressedLibs.length} compressed lib(s) to bundle.`);
+  }
 
   const writeSpinner = logOrSpinner.start(`Writing modified bundle to disk...`);
   const outputFile = path.join(

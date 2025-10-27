@@ -1,5 +1,6 @@
 {
   "notes": [
-    "Welcome to the first release of hydra! The app is not fully build right now and can only inject at HEAD, but it should be working for most webpack projects."
+    "Welcome to the first release of hydra! The app is not fully build right now and can only inject at HEAD, but it should be working for most webpack projects.",
+    "PS: If you're actually reading this, gl with whatever you are making because hydra is buggy as hell and i'd be suprised if it was actually usable to make something not horrible :P"
   ]
 }

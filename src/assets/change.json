@@ -24,6 +24,14 @@
       "version": "1.1.3",
       "date": "2025-10-19",
       "changes": ["Removed leftover dev code", "Updated changelogs"]
+    },
+    {
+      "version": "1.3",
+      "date": "2025-10-27",
+      "changes": [
+        "Added an option to manually offset injection positions by row/column",
+        "Actually implemented the 'libs' field that was present in the config schema since 1.0"
+      ]
     }
   ]
 }

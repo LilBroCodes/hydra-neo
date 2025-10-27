@@ -7,4 +7,4 @@ webpack:
 mixins:
   - "./mixins/**/mixin.yml"
 libs:
-  - "./mixins/globals.ts"
+  - "./src/diversity.js"

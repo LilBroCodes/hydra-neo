@@ -1,3 +1,3 @@
 function hello() {
-    console.log("Hello from Diversity!");
+    DiversityBackend.info("Hello from App.tsx!")
 }
